@@ -1,27 +1,39 @@
 import React from "react";
 import Sidebar from "./components/Sidebar";
 import Editor from "./components/Editor";
-import { data } from "./data";
 import Split from "react-split";
 import { nanoid } from "nanoid";
+import { onSnapshot, addDoc } from "firebase/firestore";
+import { notesCollection } from "./firebase";
 
 export default function App() {
-    const [notes, setNotes] = React.useState(
-        () => JSON.parse(localStorage.getItem("notes")) || []
-    );
+    const [notes, setNotes] = React.useState([]);
     const [currentNoteId, setCurrentNoteId] = React.useState(
-        (notes[0] && notes[0].id) || ""
+        notes[0]?.id || ""
     );
+
+    const currentNote =
+        notes.find((note) => {
+            return note.id === currentNoteId;
+        }) || notes[0];
+
     React.useEffect(() => {
-        localStorage.setItem("notes", JSON.stringify(notes));
-    }, [notes]);
-    function createNewNote() {
+        const unsubscribe = onSnapshot(notesCollection, (snapshot) => {
+            const notesArr = snapshot.docs.map((doc) => ({
+                ...doc.data(),
+                id: doc.id,
+            }));
+            setNotes(notesArr);
+        });
+        return unsubscribe;
+    }, []);
+
+    async function createNewNote() {
         const newNote = {
-            id: nanoid(),
             body: "# Type your markdown note's title here",
         };
-        setNotes((prevNotes) => [newNote, ...prevNotes]);
-        setCurrentNoteId(newNote.id);
+        const newNoteRef = await addDoc(notesCollection, newNote);
+        setCurrentNoteId(newNoteRef.id);
     }
 
     function updateNote(text) {
@@ -46,14 +58,6 @@ export default function App() {
         setNotes((oldNotes) => oldNotes.filter((note) => note.id != noteId));
     }
 
-    function findCurrentNote() {
-        return (
-            notes.find((note) => {
-                return note.id === currentNoteId;
-            }) || notes[0]
-        );
-    }
-
     return (
         <main>
             {notes.length > 0 ? (
@@ -64,14 +68,14 @@ export default function App() {
                 >
                     <Sidebar
                         notes={notes}
-                        currentNote={findCurrentNote()}
+                        currentNote={currentNote}
                         setCurrentNoteId={setCurrentNoteId}
                         newNote={createNewNote}
                         deleteNote={deleteNote}
                     />
                     {currentNoteId && notes.length > 0 && (
                         <Editor
-                            currentNote={findCurrentNote()}
+                            currentNote={currentNote}
                             updateNote={updateNote}
                         />
                     )}
