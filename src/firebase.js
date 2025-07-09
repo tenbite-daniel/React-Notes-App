@@ -6,7 +6,7 @@ import { collection, getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-    apiKey: "REMOVED",
+    apiKey: "AIzaSyCOoN7F_73AfIS8EDC0ct3tUnwcDkOtm1s",
     authDomain: "react-notes-feabb.firebaseapp.com",
     projectId: "react-notes-feabb",
     storageBucket: "react-notes-feabb.firebasestorage.app",
